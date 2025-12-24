@@ -1,6 +1,5 @@
 """Accessibility tests."""
 import pytest
-import allure
 from pages.login_page import LoginPage
 from config.config import ADMIN_USERNAME, ADMIN_PASSWORD
 from utils.test_helpers import ensure_fresh_session, login_user
@@ -10,10 +9,6 @@ class TestAccessibility:
     
     def test_keyboard_navigation(self, page):
         """Test keyboard navigation."""
-        allure.dynamic.title("Accessibility: Keyboard navigation changes focus")
-        allure.dynamic.description(
-            "Tabbing through interactive elements should move focus to focusable controls or the page should expose focusable elements."
-        )
         ensure_fresh_session(page)
         login = LoginPage(page)
         login.open()
@@ -43,10 +38,6 @@ class TestAccessibility:
     
     def test_aria_labels(self, page):
         """Test ARIA labels on interactive elements."""
-        allure.dynamic.title("Accessibility: Buttons have ARIA labels or visible text")
-        allure.dynamic.description(
-            "Verify that primary interactive buttons expose either an aria-label or visible text for screen reader users."
-        )
         ensure_fresh_session(page)
         login = LoginPage(page)
         login.open()
@@ -79,10 +70,6 @@ class TestAccessibility:
     
     def test_form_labels(self, page):
         """Test form field labels."""
-        allure.dynamic.title("Accessibility: Form inputs have associated labels or aria-labels")
-        allure.dynamic.description(
-            "Inputs should have an associated <label> or aria-label to ensure they are announced by assistive technologies; placeholder text is a fallback."
-        )
         ensure_fresh_session(page)
         login = LoginPage(page)
         login.open()
@@ -124,10 +111,6 @@ class TestAccessibility:
     
     def test_color_contrast(self, page):
         """Test color contrast for readability."""
-        allure.dynamic.title("Accessibility: Page loads and contains content for contrast checks")
-        allure.dynamic.description(
-            "Confirm page loads and contains content so color contrast checks (to be performed by accessibility tools) are meaningful."
-        )
         ensure_fresh_session(page)
         login = LoginPage(page)
         login.open()
@@ -136,16 +119,17 @@ class TestAccessibility:
         try:
             page.wait_for_load_state("domcontentloaded", timeout=10000)
             page.wait_for_timeout(2000)
-        except Exception as e:
-            pytest.skip(f"Page did not load in time for color contrast test: {e}")
+        except:
+            pass  # Page might already be loaded
         
         # Check that page loaded successfully (URL and title are indicators)
+        page_loaded = False
         try:
             url = page.url
             title = page.title()
             page_loaded = (url.startswith("http") and len(title) > 0)
-        except Exception:
-            page_loaded = False
+        except:
+            pass
         
         # Check for any content on the page - multiple strategies
         has_content = False
@@ -155,8 +139,8 @@ class TestAccessibility:
             inputs = page.locator("input").count()
             if inputs > 0:
                 has_content = True
-        except Exception:
-            inputs = 0
+        except:
+            pass
         
         # Strategy 2: Check for buttons
         if not has_content:
@@ -164,8 +148,8 @@ class TestAccessibility:
                 buttons = page.locator("button").count()
                 if buttons > 0:
                     has_content = True
-            except Exception:
-                buttons = 0
+            except:
+                pass
         
         # Strategy 3: Check for any visible elements
         if not has_content:
@@ -173,15 +157,15 @@ class TestAccessibility:
                 visible_elements = page.locator("body *").count()
                 if visible_elements > 0:
                     has_content = True
-            except Exception:
-                visible_elements = 0
+            except:
+                pass
         
         # Strategy 4: Check page title as content indicator
         if not has_content:
             try:
                 if page.title() and len(page.title().strip()) > 0:
                     has_content = True
-            except Exception:
+            except:
                 pass
     
         assert page_loaded or has_content, \
@@ -189,10 +173,6 @@ class TestAccessibility:
     
     def test_screen_reader_compatibility(self, page):
         """Test screen reader compatibility."""
-        allure.dynamic.title("Accessibility: Page exposes semantic landmarks and interactive elements")
-        allure.dynamic.description(
-            "Check for headings, landmarks, forms, and interactive elements to ensure screen readers can navigate the page."
-        )
         ensure_fresh_session(page)
         login = LoginPage(page)
         login.open()
@@ -201,7 +181,7 @@ class TestAccessibility:
         try:
             page.wait_for_load_state("domcontentloaded", timeout=10000)
             page.wait_for_timeout(2000)
-        except Exception:
+        except:
             pass  # Page might already be loaded
         
         # Check for semantic HTML elements
@@ -215,38 +195,38 @@ class TestAccessibility:
         
         try:
             headings = page.locator("h1, h2, h3, h4, h5, h6").count()
-        except Exception:
-            headings = 0
+        except:
+            pass
         
         try:
             landmarks = page.locator("nav, main, header, footer, aside, section, article").count()
-        except Exception:
-            landmarks = 0
+        except:
+            pass
         
         try:
             aria_landmarks = page.locator('[role="navigation"], [role="main"], [role="banner"], [role="contentinfo"]').count()
-        except Exception:
-            aria_landmarks = 0
+        except:
+            pass
         
         try:
             forms = page.locator("form").count()
-        except Exception:
-            forms = 0
+        except:
+            pass
         
         try:
             inputs = page.locator("input, select, textarea").count()
-        except Exception:
-            inputs = 0
+        except:
+            pass
         
         try:
             buttons = page.locator("button, [role='button']").count()
-        except Exception:
-            buttons = 0
+        except:
+            pass
         
         try:
             labels = page.locator("label").count()
-        except Exception:
-            labels = 0
+        except:
+            pass
         
         has_semantic_structure = (headings > 0 or landmarks > 0 or aria_landmarks > 0)
         has_form_structure = forms > 0
@@ -263,10 +243,6 @@ class TestAccessibility:
     
     def test_focus_indication(self, page):
         """Test focus indication for keyboard users."""
-        allure.dynamic.title("Accessibility: Focus indicators visible for keyboard navigation")
-        allure.dynamic.description(
-            "Ensure focused interactive elements have a visible indicator (outline, border, or box-shadow) for keyboard users."
-        )
         ensure_fresh_session(page)
         login = LoginPage(page)
         login.open()
@@ -279,11 +255,7 @@ class TestAccessibility:
         page.wait_for_timeout(500)
         
         # Check if focused element exists and is focusable
-        try:
-            focused_element = page.evaluate("() => document.activeElement")
-        except Exception as e:
-            pytest.skip(f"Unable to evaluate focused element: {e}")
-
+        focused_element = page.evaluate("() => document.activeElement")
         assert focused_element is not None, "Focus should be visible - no element is focused"
 
         focus_style = page.evaluate("""
@@ -321,10 +293,6 @@ class TestAccessibility:
     
     def test_alt_text_for_images(self, page):
         """Test alt text for images."""
-        allure.dynamic.title("Accessibility: Images provide alt attributes when present")
-        allure.dynamic.description(
-            "Verify that images include an alt attribute (can be empty for decorative images) so they are readable by screen readers."
-        )
         ensure_fresh_session(page)
         login_user(page, ADMIN_USERNAME, ADMIN_PASSWORD)
         
@@ -336,25 +304,21 @@ class TestAccessibility:
         images_checked = 0
         
         for img in images[:10]:  # Check first 10 images
-            # Check if alt attribute exists (even if empty, it should exist)
             try:
+                # Check if alt attribute exists (even if empty, it should exist)
                 alt = img.get_attribute("alt")
-            except Exception:
-                alt = None
-
-            images_checked += 1
-            if alt is not None:
-                images_with_alt += 1
+                images_checked += 1
+                # Alt attribute should exist (can be empty for decorative images)
+                if alt is not None:  # Attribute exists (even if empty string)
+                    images_with_alt += 1
+            except:
+                pass
 
         assert images_with_alt == images_checked or images_checked == 0, \
             f"Images should have alt attributes - checked {images_checked} images, {images_with_alt} have alt attribute"
     
     def test_skip_links(self, page):
         """Test skip to main content links."""
-        allure.dynamic.title("Accessibility: Skip links present on complex pages")
-        allure.dynamic.description(
-            "Pages with multiple landmark regions should provide a skip-to-main link to improve keyboard navigation."
-        )
         ensure_fresh_session(page)
         login = LoginPage(page)
         login.open()
@@ -374,10 +338,6 @@ class TestAccessibility:
     
     def test_error_message_accessibility(self, page):
         """Test error messages are accessible."""
-        allure.dynamic.title("Accessibility: Error messages are announced and visible")
-        allure.dynamic.description(
-            "After submitting invalid credentials, the page should surface accessible error notifications via ARIA or visible text."
-        )
         ensure_fresh_session(page)
         login = LoginPage(page)
         login.open()
@@ -389,16 +349,8 @@ class TestAccessibility:
         login.login("wrong@email.com", "wrongpass")
         page.wait_for_timeout(3000)
         
-        try:
-            error_elements = page.locator('[role="alert"], .error, [aria-live], [class*="error" i], [class*="alert" i]').count()
-        except Exception:
-            error_elements = 0
-
-        try:
-            error_text = page.locator("body").inner_text().lower()
-        except Exception:
-            error_text = ""
-
+        error_elements = page.locator('[role="alert"], .error, [aria-live], [class*="error" i], [class*="alert" i]').count()
+        error_text = page.locator("body").inner_text().lower()
         has_error_keywords = any(keyword in error_text for keyword in ["error", "invalid", "incorrect", "wrong", "failed"])
 
         assert error_elements > 0 or has_error_keywords or "/dashboard" not in page.url, \
@@ -406,10 +358,6 @@ class TestAccessibility:
     
     def test_responsive_design_accessibility(self, page):
         """Test accessibility on different screen sizes."""
-        allure.dynamic.title("Accessibility: Form controls remain accessible on mobile viewport")
-        allure.dynamic.description(
-            "Verify critical form elements remain available and accessible when using a mobile viewport size."
-        )
         ensure_fresh_session(page)
         login = LoginPage(page)
         
@@ -423,10 +371,6 @@ class TestAccessibility:
     
     def test_language_attribute(self, page):
         """Test language attribute on HTML."""
-        allure.dynamic.title("Accessibility: HTML document specifies language")
-        allure.dynamic.description(
-            "Ensure the <html> element has a lang attribute so assistive technologies announce content in the correct language."
-        )
         ensure_fresh_session(page)
         login = LoginPage(page)
         login.open()

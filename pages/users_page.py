@@ -71,21 +71,6 @@ class UsersPage(BasePage):
             return self.page.locator(self.users_list).count()
         except:
             return 0
-
-    def has_search_results(self) -> bool:
-        """Return True if search results are present."""
-        try:
-            return self.page.locator(self.users_list).count() > 0
-        except:
-            return False
-
-    def has_no_results_message(self) -> bool:
-        """Return True if the page shows a 'no results' message after search."""
-        try:
-            body_text = self.page.locator('body').inner_text().lower()
-            return "no results" in body_text or "no users found" in body_text or "no results found" in body_text
-        except:
-            return False
     
     def search_user(self, search_term: str):
         """Search for a user."""

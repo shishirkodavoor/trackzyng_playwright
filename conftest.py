@@ -20,7 +20,7 @@ REPORTS_DIR.mkdir(exist_ok=True)
 def page():
     """Playwright page fixture."""
     with sync_playwright() as p:
-        browser = p.chromium.launch()
+        browser = p.chromium.launch(headless=False, slow_mo=500)
         context = browser.new_context()
         page_obj = context.new_page()
         try:
