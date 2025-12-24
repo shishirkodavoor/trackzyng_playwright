@@ -1,0 +1,64 @@
+name: Generate and Deploy Allure Report
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pages: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install allure-pytest
+
+      - name: Install Playwright browsers
+        run: |
+          # Install Playwright browsers required for tests
+          npx playwright install --with-deps
+        env:
+          CI: true
+
+      - name: Run tests and collect Allure results
+        run: |
+          mkdir -p reports/allure-results
+          # Run tests, but allow failures so we can still generate and publish the report
+          pytest -q --alluredir=reports/allure-results || true
+
+      - name: Install Allure CLI
+        run: |
+          set -e
+          ALLURE_VERSION=2.22.0
+          wget -q https://github.com/allure-framework/allure2/releases/download/${ALLURE_VERSION}/allure-${ALLURE_VERSION}.zip
+          unzip -q allure-${ALLURE_VERSION}.zip -d /tmp
+          echo "/tmp/allure-${ALLURE_VERSION}/bin" >> $GITHUB_PATH
+
+      - name: Generate Allure HTML report
+        run: |
+          mkdir -p reports/allure-report
+          allure generate reports/allure-results -o reports/allure-report --clean
+
+      - name: Deploy Allure report to GitHub Pages (gh-pages branch)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./reports/allure-report
+          publish_branch: gh-pages
+          # Keep a clean commit history from Actions
+          user_name: 'github-actions[bot]'
+          user_email: 'github-actions[bot]@users.noreply.github.com'
